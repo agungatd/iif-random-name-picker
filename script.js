@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const card = createDayCard(day, date);
       scheduleContainer.appendChild(card);
-      await runSlotAnimation(card, names, namesForDay);
+      await runSlotAnimation(card, names, namesForDay, 8000);
     }
 
     copyButton.style.display = "block";
@@ -135,55 +135,82 @@ document.addEventListener("DOMContentLoaded", () => {
     return card;
   }
 
-  function runSlotAnimation(card, allNames, finalNames) {
-    return new Promise((resolve) => {
-      const container = card.querySelector(".slot-container");
-      const spinner = document.createElement("div");
-      spinner.className = "slot-spinner";
+  function highlightCenter(container) {
+    const spinner = container.querySelector(".slot-spinner");
+    const items = spinner.querySelectorAll(".name-tag-spinner");
 
-      let fakeNames = [];
-      for (let i = 0; i < 3; i++) fakeNames.push(...shuffleArray([...allNames]));
-      fakeNames.push(...finalNames);
+    // Reset highlights
+    items.forEach(el => el.classList.remove("highlight"));
 
-      fakeNames.forEach((name) => {
-        const el = document.createElement("div");
-        el.className = "name-tag-spinner";
-        el.textContent = name;
-        el.style.padding = "6px 12px";
-        el.style.textAlign = "center";
-        el.style.fontSize = "0.7rem";
-        el.style.color = "#1e1e1e";
-        spinner.appendChild(el);
-      });
+    const containerBottom = container.getBoundingClientRect().bottom;
 
-      container.innerHTML = "";
-      container.appendChild(spinner);
-
-      setTimeout(() => card.classList.add("visible"), 100);
-      setTimeout(() => {
-        const targetScroll = -1 * (spinner.scrollHeight - container.clientHeight);
-        spinner.style.transform = `translateY(${targetScroll}px)`;
-      }, 200);
-
-      setTimeout(() => {
-        container.innerHTML = "";
-        const namesList = document.createElement("div");
-        namesList.className = "names-list";
-        if (finalNames.length > 0) {
-          finalNames.forEach((n) => {
-            const tag = document.createElement("div");
-            tag.className = "name-tag";
-            tag.textContent = n;
-            namesList.appendChild(tag);
-          });
-        } else {
-          namesList.innerHTML = `<span style="font-style: italic; font-size: 0.9rem;">No one scheduled</span>`;
+    // Find the element whose middle is closest to container bottom
+    let closest = null;
+    let closestDistance = Infinity;
+    items.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        const distance = Math.abs(rect.bottom - containerBottom);
+        if (distance < closestDistance) {
+            closest = el;
+            closestDistance = distance;
         }
-        container.appendChild(namesList);
-        resolve();
-      }, 2200);
     });
+
+    if (closest) closest.classList.add("highlight");
   }
+
+  function runSlotAnimation(card, allNames, finalNames, spinDuration = 3000) {
+    return new Promise((resolve) => {
+        const container = card.querySelector(".slot-container");
+        const spinner = document.createElement("div");
+        spinner.className = "slot-spinner";
+        spinner.style.transition = `transform ${spinDuration / 1000}s cubic-bezier(0.25, 1, 0.5, 1)`;
+        
+        let fakeNames = [];
+        for (let i = 0; i < 3; i++) fakeNames.push(...shuffleArray([...allNames]));
+        fakeNames.push(...finalNames);
+
+        setInterval(() => highlightCenter(container), 100);
+        fakeNames.forEach((name) => {
+            const el = document.createElement("div");
+            el.className = "name-tag-spinner";
+            el.textContent = name;
+            el.style.padding = "6px 12px";
+            el.style.textAlign = "center";
+            el.style.fontSize = "0.7rem";
+            el.style.color = "#1e1e1e";
+            spinner.appendChild(el);
+        });
+
+        container.innerHTML = "";
+        container.appendChild(spinner);
+
+        setTimeout(() => card.classList.add("visible"), 100);
+        setTimeout(() => {
+            const targetScroll = -1 * (spinner.scrollHeight - container.clientHeight);
+            spinner.style.transform = `translateY(${targetScroll}px)`;
+            // While spinning, update occasionally
+        }, 200);
+
+        setTimeout(() => {
+            container.innerHTML = "";
+            const namesList = document.createElement("div");
+            namesList.className = "names-list";
+            if (finalNames.length > 0) {
+                finalNames.forEach((n) => {
+                const tag = document.createElement("div");
+                tag.className = "name-tag";
+                tag.textContent = n;
+                namesList.appendChild(tag);
+                });
+            } else {
+                namesList.innerHTML = `<span style="font-style: italic; font-size: 0.9rem;">No one scheduled</span>`;
+            }
+            container.appendChild(namesList);
+            resolve();
+        }, spinDuration);
+    });
+    }
 
   function copyToClipboard() {
     if (navigator.clipboard) {
