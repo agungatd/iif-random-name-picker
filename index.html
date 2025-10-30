@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IIF WFH Schedule Generator</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="iif-logo.png" sizes="32x32">
+</head>
+<body>
+  <div class="container">
+    <aside class="settings">
+      <h2>Settings</h2>
+      <div class="input-group">
+        <label for="namesInput">Employee Names (one per line)</label>
+        <textarea id="namesInput" placeholder="Agung
+Bob
+Candra
+Devina
+Eka
+...">Agung
+Nabila
+Ikram
+Khisan
+BA*
+Derry
+Jo 
+Jafar
+Rendelt
+Pedro</textarea>
+      </div>
+
+      <div class="input-group">
+        <label for="daysInput">WFH Days per Person (e.g., 2)</label>
+        <input type="number" id="daysInput" value="2" min="1" max="5">
+      </div>
+
+      <div class="input-group">
+        <label for="startDateInput">Start Week (Optional)</label>
+        <input type="date" id="startDateInput">
+        <small>Select any day. It will auto-start from that Monday. (Default: Next week)</small>
+      </div>
+
+      <button id="generateButton">Generate Schedule</button>
+      <div id="error-message" class="error-message"></div>
+    </aside>
+
+    <main class="results">
+      <div id="results-header">
+        <h2>WFH Schedule</h2>
+        <div>
+          <button id="copyButton">Copy Result to Clipboard</button>
+        </div>
+      </div>
+      <div id="scheduleContainer"></div>
+      <div id="warningMessage"></div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
