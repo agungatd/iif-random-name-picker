@@ -31,12 +31,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const wfhDays = parseInt(daysInput.value);
 
     if (names.length === 0 || wfhDays <= 0) {
-      showError("Please enter valid names and a number of WFH days (at least 1).");
+      showError("⚠️ Please enter valid names and a number of WFH days (at least 1).");
       resetGenerateButton();
       return;
     }
     if (wfhDays > 5) {
-      showError("WFH days per person cannot be more than 5.");
+      showError("❗WFH days per person cannot be more than 5.");
       resetGenerateButton();
       return;
     }
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const weekDates = getWorkWeek(startDateInput.value);
     const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-    scheduleText = "WFH Schedule:\n\n";
+    scheduleText = "WFH Schedule:\n------------------\n";
 
     for (let i = 0; i < dayNames.length; i++) {
       const day = dayNames[i];
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const card = createDayCard(day, date);
       scheduleContainer.appendChild(card);
-      await runSlotAnimation(card, names, namesForDay, 8000);
+      await runSlotAnimation(card, names, namesForDay, 1000);
     }
 
     copyButton.style.display = "block";
@@ -252,8 +252,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function shuffleArray(array) {
     // set seed for reproducibility
-    const seed = 42;
-    Math.seed = seed;
+    // const seed = 42;
+    // Math.seed = seed;
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
@@ -264,6 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function showError(message) {
     errorMessage.textContent = message;
     errorMessage.style.display = "block";
+    errorMessage.style.color = "#881609ff";
   }
 
   function resetGenerateButton() {
@@ -271,3 +272,14 @@ document.addEventListener("DOMContentLoaded", () => {
     generateButton.textContent = "Generate Schedule";
   }
 });
+
+async function sendToTeams(message) {
+  const teamsUrl = process.env.TEAMS_URL;
+  const payload = { source: "random-picker-web", message: message };
+
+  await fetch(teamsUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+}
