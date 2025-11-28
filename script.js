@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
     errorMessage.style.display = "none";
     warningMessage.style.display = "none";
     scheduleText = "";
+    let generationResult = {};
 
     const names = namesInput.value
       .split("\n")
@@ -41,7 +42,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const generationResult = generateSchedule(names, wfhDays);
+    if (wfhDays === 2) {
+      generationResult = generateScheduleForTwoDays(names, wfhDays);
+    } else {
+      generationResult = generateSchedule(names, wfhDays);
+    }
     finalScheduleData = generationResult.schedule;
 
     if (generationResult.unassignedSlots > 0) {
@@ -126,6 +131,61 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     return { schedule: finalSchedule, unassignedSlots: masterPool.length };
+  }
+
+  function generateScheduleForTwoDays(employees, wfhDays) {
+    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const totalPeople = employees.length;
+
+    // --- 1. VALIDATION FOR RULE 2 ---
+    // Rule 2 requires unique pairs. Max unique pairs from 5 days is 10.
+    if (wfhDays !== 2) {
+      // Your constraints are for 2 days. This logic only works for wfhDays = 2.
+      showError("❗To guarantee the 'unique pair' rule, WFH days per person must be exactly 2.");
+      return { schedule: {}, unassignedSlots: totalPeople * wfhDays };
+    }
+    if (totalPeople > 10) {
+      showError("❗Cannot guarantee the 'unique pair' rule for more than 10 people with 5 days.");
+      return { schedule: {}, unassignedSlots: totalPeople * wfhDays };
+    }
+    
+    // --- 2. GENERATE ALL UNIQUE 2-DAY SCHEDULES ---
+    let allSchedules = [];
+    for (let i = 0; i < dayNames.length; i++) {
+        for (let j = i + 1; j < dayNames.length; j++) {
+            // Store the schedule as an array of two day names
+            allSchedules.push([dayNames[i], dayNames[j]]);
+        }
+    }
+
+    // --- 3. SHUFFLE AND SELECT THE NECESSARY NUMBER OF SCHEDULES ---
+    shuffleArray(allSchedules); // Use your existing shuffleArray function
+    const selectedSchedules = allSchedules.slice(0, totalPeople); // Select 9 unique pairs
+
+    // --- 4. ASSIGN NAMES TO THE UNIQUE SCHEDULES ---
+    let nameToScheduleMap = {}; // Maps Name -> [Day1, Day2]
+    for (let i = 0; i < totalPeople; i++) {
+        nameToScheduleMap[employees[i]] = selectedSchedules[i];
+    }
+    
+    // --- 5. REVERSE MAP TO CREATE THE FINAL DAY-BASED SCHEDULE ---
+    let finalSchedule = {
+      "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": []
+    };
+
+    for (const name in nameToScheduleMap) {
+        const [day1, day2] = nameToScheduleMap[name];
+        finalSchedule[day1].push(name);
+        finalSchedule[day2].push(name);
+    }
+    
+    // Sort names within each day for clean output
+    for (const day in finalSchedule) {
+      finalSchedule[day].sort();
+    }
+
+    // Since we used exactly one unique pair per person, there are no unassigned slots.
+    return { schedule: finalSchedule, unassignedSlots: 0 };
   }
 
   function createDayCard(day, date) {
