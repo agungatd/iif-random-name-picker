@@ -10,10 +10,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let finalScheduleData = {};
   let scheduleText = "";
+  let holidays = {};
 
   startDateInput.min = new Date().toISOString().split("T")[0];
   generateButton.addEventListener("click", handleGeneration);
   copyButton.addEventListener("click", copyToClipboard);
+  loadHolidays();
 
   async function handleGeneration() {
     generateButton.disabled = true;
@@ -49,6 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     finalScheduleData = generationResult.schedule;
 
+    // Apply holiday reassignments after generating the initial schedule
+    const weekISO = getWorkWeekISO(startDateInput.value);
+    applyHolidayReassignments(finalScheduleData, weekISO);
+
     if (generationResult.unassignedSlots > 0) {
       warningMessage.textContent = `Warning: ${generationResult.unassignedSlots} WFH slot(s) could not be assigned.`;
       warningMessage.style.display = "block";
@@ -63,10 +69,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const date = weekDates[i];
       const namesForDay = finalScheduleData[day] || [];
 
-      scheduleText += `[${day}, ${date}]\n`;
+      const holidayInfo = holidays[weekISO[i]];
+      scheduleText += `[${day}, ${date}${holidayInfo ? ` — ${holidayInfo.summary} (Holiday)` : ""}]\n`;
       scheduleText += namesForDay.length > 0 ? namesForDay.join(", ") + "\n\n" : "No one\n\n";
+      const card = createDayCard(day, date, holidayInfo ? holidayInfo.summary : null);
 
-      const card = createDayCard(day, date);
       scheduleContainer.appendChild(card);
       await runSlotAnimation(card, names, namesForDay, 1000);
     }
@@ -188,10 +195,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return { schedule: finalSchedule, unassignedSlots: 0 };
   }
 
-  function createDayCard(day, date) {
+  function createDayCard(day, date, holidayLabel = null) {
     const card = document.createElement("div");
     card.className = "day-card";
-    card.innerHTML = `<h3>${day} <span>${date}</span></h3><div class="slot-container"></div>`;
+    const badge = holidayLabel
+      ? ` <span style="font-size:0.65rem;background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-weight:600;">🚫 ${holidayLabel}</span>`
+      : "";
+    card.innerHTML = `<h3>${day} <span>${date}</span>${badge}</h3><div class="slot-container"></div>`;
     return card;
   }
 
@@ -327,6 +337,68 @@ document.addEventListener("DOMContentLoaded", () => {
   function resetGenerateButton() {
     generateButton.disabled = false;
     generateButton.textContent = "Generate Schedule";
+  }
+
+  async function loadHolidays() {
+    try {
+      const res = await fetch("holidays.json");
+      if (res.ok) holidays = await res.json();
+    } catch (e) {
+      console.warn("holidays.json not found or invalid — no holidays applied.");
+    }
+  }
+
+  function getWorkWeekISO(startDateValue) {
+    let baseDate, startMonday;
+    if (startDateValue) {
+      const [y, m, d] = startDateValue.split("-").map(Number);
+      baseDate = new Date(y, m - 1, d);
+    } else baseDate = new Date();
+
+    const dow = baseDate.getDay();
+    if (!startDateValue) {
+      let dtu = dow === 0 ? 1 : 8 - dow;
+      if (dow === 1) dtu = 7;
+      startMonday = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + dtu);
+    } else {
+      const diff = baseDate.getDate() - dow + (dow === 0 ? -6 : 1);
+      startMonday = new Date(baseDate.getFullYear(), baseDate.getMonth(), diff);
+    }
+
+    return Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(startMonday.getFullYear(), startMonday.getMonth(), startMonday.getDate() + i);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    });
+  }
+
+  function applyHolidayReassignments(schedule, weekISO) {
+    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+    const findNearest = (idx) => {
+      for (let offset = 1; offset < 5; offset++) {
+        for (const dir of [-1, 1]) {
+          const c = idx + dir * offset;
+          if (c >= 0 && c < 5 && !holidays[weekISO[c]]) return c;
+        }
+      }
+      return -1;
+    };
+
+    for (let i = 0; i < dayNames.length; i++) {
+      if (!holidays[weekISO[i]]) continue;
+      const displaced = [...(schedule[dayNames[i]] || [])];
+      if (!displaced.length) continue;
+
+      schedule[dayNames[i]] = [];
+      const targetIdx = findNearest(i);
+      if (targetIdx === -1) continue;
+
+      const targetDay = dayNames[targetIdx];
+      for (const name of displaced) {
+        if (!schedule[targetDay].includes(name)) schedule[targetDay].push(name);
+      }
+      schedule[targetDay].sort();
+    }
   }
 });
 
