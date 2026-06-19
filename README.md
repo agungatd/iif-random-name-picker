@@ -30,6 +30,18 @@ When generating 2-day schedules per person:
 ### Prerequisites
 - Modern web browser with JavaScript enabled
 - Local web server (recommended for development)
+   try one of these two options:
+   1. Option 1. Use VS Code "Live Server" Extension (Recommended)
+   ```
+   1. Open VS Code.
+   2. Go to the Extensions tab on the left side (or press Ctrl+Shift+X).
+   3. Search for Live Server (by Ritwick Dey) and click install.4. Open your project folder in VS Code.
+   5. Right-click your index.html file and choose Open with Live Server.
+   6. Your browser will open a new tab at http://127.0.0.1:5500
+   ```
+   2. Option 2. If you have Python installed on your system, you can run this command in your terminal inside your project folder:
+   - For Python 3: `python -m http.server 8000`
+   - Then open http://localhost:8000 in your browser.
 
 ### Setup
 1. Clone the repository:

@@ -341,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadHolidays() {
     try {
-      const res = await fetch("holidays.json");
+      const res = await fetch("./holidays.json");
       if (res.ok) holidays = await res.json();
     } catch (e) {
       console.warn("holidays.json not found or invalid — no holidays applied.");
