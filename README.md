@@ -35,7 +35,8 @@ When generating 2-day schedules per person:
    ```
    1. Open VS Code.
    2. Go to the Extensions tab on the left side (or press Ctrl+Shift+X).
-   3. Search for Live Server (by Ritwick Dey) and click install.4. Open your project folder in VS Code.
+   3. Search for Live Server (by Ritwick Dey) and click install
+   4. Open your project folder in VS Code.
    5. Right-click your index.html file and choose Open with Live Server.
    6. Your browser will open a new tab at http://127.0.0.1:5500
    ```
