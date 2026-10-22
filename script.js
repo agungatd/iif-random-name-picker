@@ -457,12 +457,22 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function sendToTeams(message) {
-  const teamsUrl = process.env.TEAMS_URL;
-  const payload = { source: "random-picker-web", message: message };
+  try {
+    const teamsUrl = typeof window !== "undefined" && window.TEAMS_WEBHOOK_URL
+      ? window.TEAMS_WEBHOOK_URL
+      : null;
+    if (!teamsUrl) {
+      console.warn("Teams webhook URL not configured. Set window.TEAMS_WEBHOOK_URL to enable Teams integration.");
+      return;
+    }
+    const payload = { source: "random-picker-web", message: message };
 
-  await fetch(teamsUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+    await fetch(teamsUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    console.warn("Failed to send to Teams:", e);
+  }
 }
