@@ -237,10 +237,20 @@ document.addEventListener("DOMContentLoaded", () => {
         spinner.style.transition = `transform ${spinDuration / 1000}s cubic-bezier(0.25, 1, 0.5, 1)`;
         
         let fakeNames = [];
-        for (let i = 0; i < 3; i++) fakeNames.push(...shuffleArray([...allNames]));
-        fakeNames.push(...finalNames);
+        if (Array.isArray(allNames) && allNames.length > 0) {
+          for (let i = 0; i < 3; i++) fakeNames.push(...shuffleArray([...allNames]));
+        }
+        if (Array.isArray(finalNames)) {
+          fakeNames.push(...finalNames);
+        }
 
-        setInterval(() => highlightCenter(container), 100);
+        const highlightInterval = setInterval(() => {
+          try {
+            highlightCenter(container);
+          } catch (e) {
+            // ignore
+          }
+        }, 100);
         fakeNames.forEach((name) => {
             const el = document.createElement("div");
             el.className = "name-tag-spinner";
@@ -255,18 +265,20 @@ document.addEventListener("DOMContentLoaded", () => {
         container.innerHTML = "";
         container.appendChild(spinner);
 
-        setTimeout(() => card.classList.add("visible"), 100);
-        setTimeout(() => {
+        const timeout1 = setTimeout(() => card.classList.add("visible"), 100);
+        const timeout2 = setTimeout(() => {
             const targetScroll = -1 * (spinner.scrollHeight - container.clientHeight);
             spinner.style.transform = `translateY(${targetScroll}px)`;
-            // While spinning, update occasionally
         }, 200);
 
         setTimeout(() => {
+            clearInterval(highlightInterval);
+            clearTimeout(timeout1);
+            clearTimeout(timeout2);
             container.innerHTML = "";
             const namesList = document.createElement("div");
             namesList.className = "names-list";
-            if (finalNames.length > 0) {
+            if (Array.isArray(finalNames) && finalNames.length > 0) {
                 finalNames.forEach((n) => {
                 const tag = document.createElement("div");
                 tag.className = "name-tag";
