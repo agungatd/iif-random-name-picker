@@ -12,7 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let scheduleText = "";
   let holidays = {};
 
-  startDateInput.min = new Date().toISOString().split("T")[0];
+  const today = new Date();
+  const todayStr = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
+  startDateInput.min = todayStr;
   generateButton.addEventListener("click", handleGeneration);
   copyButton.addEventListener("click", copyToClipboard);
   loadHolidays();
@@ -339,25 +341,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function getWorkWeek(startDateValue) {
-    const dates = [];
-    let startMonday;
+  function getStartMonday(startDateValue) {
     let baseDate;
-
     if (startDateValue) {
       const parts = startDateValue.split("-").map(Number);
-      baseDate = new Date(parts[0], parts[1] - 1, parts[2]);
-    } else baseDate = new Date();
+      if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+        baseDate = new Date(parts[0], parts[1] - 1, parts[2]);
+      } else {
+        baseDate = new Date();
+      }
+    } else {
+      baseDate = new Date();
+    }
 
-    const dayOfWeek = baseDate.getDay();
+    const dayOfWeek = baseDate.getDay(); // 0 Sun, 1 Mon, ...
     if (!startDateValue) {
       let daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
       if (dayOfWeek === 1) daysUntilMonday = 7;
-      startMonday = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + daysUntilMonday);
+      return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + daysUntilMonday);
     } else {
       const diff = baseDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-      startMonday = new Date(baseDate.getFullYear(), baseDate.getMonth(), diff);
+      return new Date(baseDate.getFullYear(), baseDate.getMonth(), diff);
     }
+  }
+
+  function getWorkWeek(startDateValue) {
+    const dates = [];
+    const startMonday = getStartMonday(startDateValue);
 
     for (let i = 0; i < 5; i++) {
       const date = new Date(startMonday.getFullYear(), startMonday.getMonth(), startMonday.getDate() + i);
@@ -397,21 +407,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getWorkWeekISO(startDateValue) {
-    let baseDate, startMonday;
-    if (startDateValue) {
-      const [y, m, d] = startDateValue.split("-").map(Number);
-      baseDate = new Date(y, m - 1, d);
-    } else baseDate = new Date();
-
-    const dow = baseDate.getDay();
-    if (!startDateValue) {
-      let dtu = dow === 0 ? 1 : 8 - dow;
-      if (dow === 1) dtu = 7;
-      startMonday = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + dtu);
-    } else {
-      const diff = baseDate.getDate() - dow + (dow === 0 ? -6 : 1);
-      startMonday = new Date(baseDate.getFullYear(), baseDate.getMonth(), diff);
-    }
+    const startMonday = getStartMonday(startDateValue);
 
     return Array.from({ length: 5 }, (_, i) => {
       const d = new Date(startMonday.getFullYear(), startMonday.getMonth(), startMonday.getDate() + i);
