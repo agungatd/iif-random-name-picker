@@ -295,11 +295,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
   function copyToClipboard() {
+    if (!scheduleText) return;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(scheduleText).then(() => {
+        const originalText = copyButton.textContent;
         copyButton.textContent = "Copied!";
-        setTimeout(() => (copyButton.textContent = "Copy to Clipboard"), 2000);
+        setTimeout(() => {
+          copyButton.textContent = originalText || "Copy Result to Clipboard";
+        }, 2000);
+      }).catch(() => {
+        try {
+          const textarea = document.createElement("textarea");
+          textarea.value = scheduleText;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+          const originalText = copyButton.textContent;
+          copyButton.textContent = "Copied!";
+          setTimeout(() => {
+            copyButton.textContent = originalText || "Copy Result to Clipboard";
+          }, 2000);
+        } catch (e) {
+          // ignore
+        }
       });
+    } else {
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = scheduleText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        const originalText = copyButton.textContent;
+        copyButton.textContent = "Copied!";
+        setTimeout(() => {
+          copyButton.textContent = originalText || "Copy Result to Clipboard";
+        }, 2000);
+      } catch (e) {
+        // ignore
+      }
     }
   }
 
