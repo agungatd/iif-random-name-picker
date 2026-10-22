@@ -417,11 +417,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function applyHolidayReassignments(schedule, weekISO) {
     const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    if (!schedule || !Array.isArray(weekISO)) return;
 
     for (let i = 0; i < dayNames.length; i++) {
-      if (!holidays[weekISO[i]]) continue;
+      const iso = weekISO[i];
+      if (!iso || !holidays[iso]) continue;
 
-      const displaced = [...(schedule[dayNames[i]] || [])];
+      const displaced = Array.isArray(schedule[dayNames[i]]) ? [...schedule[dayNames[i]]] : [];
       if (!displaced.length) continue;
 
       schedule[dayNames[i]] = [];
@@ -429,18 +431,27 @@ document.addEventListener("DOMContentLoaded", () => {
       // Collect all non-holiday weekday indices
       const availableIdx = dayNames
         .map((_, idx) => idx)
-        .filter(idx => idx !== i && !holidays[weekISO[idx]]);
+        .filter(idx => idx !== i && weekISO[idx] && !holidays[weekISO[idx]]);
 
-      if (!availableIdx.length) continue;
+      if (!availableIdx.length) {
+        // If no available non-holiday days, put them back to avoid losing slots
+        schedule[dayNames[i]] = displaced.slice().sort();
+        continue;
+      }
 
       // Round-robin spread across available days
       displaced.forEach((name, k) => {
         const targetDay = dayNames[availableIdx[k % availableIdx.length]];
+        if (!Array.isArray(schedule[targetDay])) schedule[targetDay] = [];
         if (!schedule[targetDay].includes(name)) schedule[targetDay].push(name);
       });
 
       // Re-sort each affected day
-      availableIdx.forEach(idx => schedule[dayNames[idx]].sort());
+      availableIdx.forEach(idx => {
+        if (Array.isArray(schedule[dayNames[idx]])) {
+          schedule[dayNames[idx]].sort();
+        }
+      });
     }
   }
 });
