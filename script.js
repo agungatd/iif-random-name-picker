@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const errorMessage = document.getElementById("error-message");
   const warningMessage = document.getElementById("warningMessage");
 
+  const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
   let finalScheduleData = {};
   let scheduleText = "";
   let holidays = {};
@@ -63,11 +65,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const weekDates = getWorkWeek(startDateInput.value);
-    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     scheduleText = "WFH Schedule:\n------------------\n";
 
-    for (let i = 0; i < dayNames.length; i++) {
-      const day = dayNames[i];
+    for (let i = 0; i < DAY_NAMES.length; i++) {
+      const day = DAY_NAMES[i];
       const date = weekDates[i];
       const namesForDay = finalScheduleData[day] || [];
 
@@ -416,40 +417,39 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function applyHolidayReassignments(schedule, weekISO) {
-    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     if (!schedule || !Array.isArray(weekISO)) return;
 
-    for (let i = 0; i < dayNames.length; i++) {
+    for (let i = 0; i < DAY_NAMES.length; i++) {
       const iso = weekISO[i];
       if (!iso || !holidays[iso]) continue;
 
-      const displaced = Array.isArray(schedule[dayNames[i]]) ? [...schedule[dayNames[i]]] : [];
+      const displaced = Array.isArray(schedule[DAY_NAMES[i]]) ? [...schedule[DAY_NAMES[i]]] : [];
       if (!displaced.length) continue;
 
-      schedule[dayNames[i]] = [];
+      schedule[DAY_NAMES[i]] = [];
 
       // Collect all non-holiday weekday indices
-      const availableIdx = dayNames
+      const availableIdx = DAY_NAMES
         .map((_, idx) => idx)
         .filter(idx => idx !== i && weekISO[idx] && !holidays[weekISO[idx]]);
 
       if (!availableIdx.length) {
         // If no available non-holiday days, put them back to avoid losing slots
-        schedule[dayNames[i]] = displaced.slice().sort();
+        schedule[DAY_NAMES[i]] = displaced.slice().sort();
         continue;
       }
 
       // Round-robin spread across available days
       displaced.forEach((name, k) => {
-        const targetDay = dayNames[availableIdx[k % availableIdx.length]];
+        const targetDay = DAY_NAMES[availableIdx[k % availableIdx.length]];
         if (!Array.isArray(schedule[targetDay])) schedule[targetDay] = [];
         if (!schedule[targetDay].includes(name)) schedule[targetDay].push(name);
       });
 
       // Re-sort each affected day
       availableIdx.forEach(idx => {
-        if (Array.isArray(schedule[dayNames[idx]])) {
-          schedule[dayNames[idx]].sort();
+        if (Array.isArray(schedule[DAY_NAMES[idx]])) {
+          schedule[DAY_NAMES[idx]].sort();
         }
       });
     }
